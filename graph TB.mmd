@@ -1,0 +1,58 @@
+graph TD
+    A["Raw Data: comments_*.csv + videos.csv"] --> B["merge_clean.py"]
+    B --> C["comments_merged.parquet"]
+
+    C --> D["enrich_features.py"]
+    D --> E["comments_enriched.parquet"]
+
+    E --> F["aggregate_video_activity.py"]
+    F --> G["video_hourly_activity.parquet"]
+
+    G --> H["hawkes_momentum.py"]
+    H --> I["signal_hawkes.csv (Rₜ)"]
+
+    G --> J["tbi_novelty.py"]
+    J --> K["signal_tbi.csv (TBI)"]
+
+    E --> L["fundamentals.py"]
+    L --> M["signal_fundamentals.csv"]
+
+    I --> N["fusion_engine.py"]
+    K --> N
+    M --> N
+    N --> O["all_signals_combined.csv"]
+
+    O --> P["ml_predictor.py"]
+    
+    subgraph "ML Input Features"
+        E --> P
+        M --> P
+        V["Video Metadata: title, description, duration, tags"] --> P
+    end
+
+    subgraph "Machine Learning Models"
+        P --> Q["Model: Viral Prediction (Text + Engagement) → LightGBM/BERT"]
+        P --> R["Model: Likes Forecast → LSTM/Prophet"]
+        P --> S["Model: Reach Estimation → XGBoost Regressor"]
+    end
+
+    Q --> T["pred_viral_proba.csv"]
+    R --> U["pred_likes.csv"]
+    S --> V2["pred_reach.csv"]
+
+    T --> W["ml_outputs_combined.csv"]
+    U --> W
+    V2 --> W
+
+    O --> X["Dashboard: Streamlit or Kaggle Notebook"]
+    W --> X
+
+    X --> Y["User selects formula: Rₜ | TBI | RobustTrend | Growth Rate"]
+    X --> Z["User selects ML model: Viral Prediction | Likes | Reach"]
+    
+    Y --> AA["Interactive trend rankings & time series"]
+    Z --> AB["Forecast plots, probability gauges, reach heatmaps"]
+    
+    style X fill:#4B0082,stroke:#fff,color:#fff
+    style Y fill:#2F4F4F,stroke:#fff,color:#fff
+    style Z fill:#2F4F4F,stroke:#fff,color:#fff
